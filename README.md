@@ -1,1 +1,3 @@
-# senior_design_scripts
+# Automation Scripts
+
+Automation scripts used in senior design class.
