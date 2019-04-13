@@ -76,7 +76,7 @@ resource "aws_main_route_table_association" "a" {
 # create security group for public EC2 Instances (App, Database, Mail)
 resource "aws_security_group" "public-security-group" {
   name        = "public_group"              # 'group name' column
-  description = "Allow SSH inbound traffic"
+  description = "Publicly available ports"
   vpc_id      = "${aws_vpc.databae-vpc.id}"
 
   ### Inbound ###
@@ -196,7 +196,7 @@ resource "aws_security_group" "public-security-group" {
 # create security group for private EC2 Instance (Cache server)
 resource "aws_security_group" "private-security-group" {
   name        = "private_group"             # 'group name' column
-  description = "Allow SSH inbound traffic"
+  description = "Private ports"
   vpc_id      = "${aws_vpc.databae-vpc.id}"
 
   ### Inbound ###
