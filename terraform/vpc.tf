@@ -73,11 +73,13 @@ resource "aws_main_route_table_association" "a" {
   route_table_id = "${aws_route_table.databae-public-route-table.id}"
 }
 
-# create security group for public EC2 Instance
+# create security group for public EC2 Instances (App, Database, Mail)
 resource "aws_security_group" "public-security-group" {
   name        = "public_group"              # 'group name' column
   description = "Allow SSH inbound traffic"
   vpc_id      = "${aws_vpc.databae-vpc.id}"
+
+  ### Inbound ###
 
   # ssh
   ingress {
@@ -86,59 +88,120 @@ resource "aws_security_group" "public-security-group" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
-  # HTTPS inbound
+  # HTTP
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  # HTTPS 
   ingress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
-  # ssh outbound to be able to connect to private subnet
-  egress {
-    from_port   = 22
-    to_port     = 22
+  # MySQL/Aurora
+  ingress {
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = ["172.31.11.238/32"] # only from app server?
+  }
+  # POP3
+  ingress {
+    from_port   = 110
+    to_port     = 110
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  # POP3S
+  ingress {
+    from_port   = 995
+    to_port     = 995
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  # IMAP
+  ingress {
+    from_port   = 143
+    to_port     = 143
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  # IMAPS
+  ingress {
+    from_port   = 993
+    to_port     = 993
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  # SMPT
+  ingress {
+    from_port   = 25
+    to_port     = 25
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  # SMPTS
+  ingress {
+    from_port   = 465
+    to_port     = 465
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  # OpsView
+  ingress {
+    from_port   = 5666
+    to_port     = 5666
+    protocol    = "tcp"
+    cidr_blocks = ["130.166.42.43/32"]
+  }
+  # OpsView again
+  ingress {
+    from_port   = 5666
+    to_port     = 5666
+    protocol    = "tcp"
+    cidr_blocks = ["130.166.42.45/32"]
+  }
+  # idk
+  ingress {
+    from_port   = 587
+    to_port     = 587
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  # idk again
+  ingress {
+    from_port   = 8081
+    to_port     = 8081
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # HTTPS outbound
+  ### Outbound ALLOW ALL ###
+
   egress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
-  # for DNS lookups
-  egress {
-    from_port   = 53
-    to_port     = 53
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # HTTP
-  egress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   tags = {
     Name = "public_security_group" # 'security group name' column
   }
 }
 
-# create security group for private EC2 Instance
+# create security group for private EC2 Instance (Cache server)
 resource "aws_security_group" "private-security-group" {
   name        = "private_group"             # 'group name' column
   description = "Allow SSH inbound traffic"
   vpc_id      = "${aws_vpc.databae-vpc.id}"
 
-  # only allow incoming ssh
+  ### Inbound ###
+
+  # ssh
   ingress {
     from_port = 22
     to_port   = 22
@@ -148,23 +211,36 @@ resource "aws_security_group" "private-security-group" {
     # Allow incoming connections only from public subnet
     security_groups = ["${aws_security_group.public-security-group.id}"]
   }
-
-  # HTTP
-  egress {
-    from_port   = 80
-    to_port     = 80
+  # App server to cache server
+  ingress {
+    from_port   = 6379
+    to_port     = 6379
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["52.8.214.179/32"]
+  }
+  # OpsView
+  ingress {
+    from_port   = 5666
+    to_port     = 5666
+    protocol    = "tcp"
+    cidr_blocks = ["130.166.42.43/32"]
+  }
+  # OpsView again
+  ingress {
+    from_port   = 5666
+    to_port     = 5666
+    protocol    = "tcp"
+    cidr_blocks = ["130.166.42.45/32"]
   }
 
-  # HTTPS
+  ### Outbound ALLOW ALL ###
+
   egress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
   tags = {
     Name = "private_security_group" # 'security group name' column
   }
